@@ -1,3 +1,10 @@
+###########################################################################
+# ID: 11810038  Yaasheen Sheikh                                           #
+# ID: 11810106  Mahesh Patil                                              #
+# ID: 11810091  Bhargav BR                                                #
+###########################################################################
+
+
 #---------------------------------------------------------------------#
 #        Shiny App for UDPipe NLP workflow                            #
 #---------------------------------------------------------------------#
@@ -20,13 +27,14 @@ ui <- shinyUI(
         fileInput("file1", "Upload data (txt file) for the language selected"),
         fileInput("file2", "Upload data (.udpipe format) for the language selected"),
         
-        checkboxGroupInput(inputId = 'xpos',
-                      label = h3('Select XPOS Part of speech for Co-occurrances and Annotated Data filtering'),
-                      choices =list("adjective"= "JJ",
-                                    "Noun" = "NN",
-                                    "proper noun" = "NNP",
-                                    "adverb"="RB","verb"= "VB"),
-                      selected = c("JJ","NN","NNP"))
+        checkboxGroupInput(inputId = 'upos',
+                           label = h3('Select XPOS/UPOS Part of speech for Co-occurrances and Annotated Data filtering'),
+                           choices =list("Adjective"= "ADJ",
+                                         "Noun" = "NOUN",
+                                         "Proper Noun" = "PROPN",
+                                         "Adverb"="ADV",
+                                         "Verb"= "VERB"),
+                           selected = c("ADJ","NOUN","PROPN"))
         
         
         
@@ -54,17 +62,17 @@ ui <- shinyUI(
                                span(strong("Upload data (Udpipe Format)")),
                                'and upload the udpipe file specific to the language '),
                              br(),
-                    
-                            h4('Details of Output'),
-                            p('There are 4 Output Tabs, click on', 
-                            span(strong("Second Page")),
-                            'to see the Annotated Data and to Download the Data into csv file'),
-                            p('Click on', 
-                            span(strong("Third Page")),
-                            'to see the word Clouds for Nouns and Verbs from the Annotated Data'),
-                            p('Click on', 
-                            span(strong("Fourth Page")),
-                            'to see the Co-occurences for XPOS selected on the Check Boxes on the side pane.')),
+                             
+                             h4('Details of Output'),
+                             p('There are 4 Output Tabs, click on', 
+                               span(strong("Tab of Annotated Documents")),
+                               'to see the Annotated Data and to Download the Data into csv file'),
+                             p('Click on', 
+                               span(strong("Word Cloud")),
+                               'to see the word Clouds for Nouns and Verbs from the Annotated Data'),
+                             p('Click on', 
+                               span(strong("Co-occurence for XPOS")),
+                               'to see the Co-occurences for XPOS selected on the Check Boxes on the side pane.')),
                     
                     tabPanel("Table of Annotated documents", 
                              dataTableOutput('datatableOutput'),

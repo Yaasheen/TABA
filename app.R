@@ -1,3 +1,10 @@
+###########################################################################
+# ID: 11810038  Yaasheen Sheikh                                           #
+# ID: 11810106  Mahesh Patil                                              #
+# ID: 11810091  Bhargav BR                                                #
+###########################################################################
+
+
 #---------------------------------------------------------------------#
 #        Shiny App for UDPipe NLP workflow                            #
 #---------------------------------------------------------------------#
@@ -20,13 +27,14 @@ ui <- shinyUI(
         fileInput("file1", "Upload data (txt file) for the language selected"),
         fileInput("file2", "Upload data (.udpipe format) for the language selected"),
         
-        checkboxGroupInput(inputId = 'xpos',
-                           label = h3('Select XPOS Part of speech for Co-occurrances and Annotated Data filtering'),
-                           choices =list("adjective"= "JJ",
-                                         "Noun" = "NN",
-                                         "proper noun" = "NNP",
-                                         "adverb"="RB","verb"= "VB"),
-                           selected = c("JJ","NN","NNP"))
+        checkboxGroupInput(inputId = 'upos',
+                           label = h3('Select XPOS/UPOS Part of speech for Co-occurrances and Annotated Data filtering'),
+                           choices =list("Adjective"= "ADJ",
+                                         "Noun" = "NOUN",
+                                         "Proper Noun" = "PROPN",
+                                         "Adverb"="ADV",
+                                         "Verb"= "VERB"),
+                           selected = c("ADJ","NOUN","PROPN"))
         
         
         
@@ -57,13 +65,13 @@ ui <- shinyUI(
                              
                              h4('Details of Output'),
                              p('There are 4 Output Tabs, click on', 
-                               span(strong("Second Page")),
+                               span(strong("Tab of Annotated Documents")),
                                'to see the Annotated Data and to Download the Data into csv file'),
                              p('Click on', 
-                               span(strong("Third Page")),
+                               span(strong("Word Cloud")),
                                'to see the word Clouds for Nouns and Verbs from the Annotated Data'),
                              p('Click on', 
-                               span(strong("Fourth Page")),
+                               span(strong("Co-occurence for XPOS")),
                                'to see the Co-occurences for XPOS selected on the Check Boxes on the side pane.')),
                     
                     tabPanel("Table of Annotated documents", 
@@ -88,7 +96,7 @@ ui <- shinyUI(
 ) # end of UI
 
 
-
+windowsFonts(devanew=windowsFont("Devanagari new normal"))
 
 # Define Server function
 options(shiny.maxRequestSize=30*1024^2)
@@ -113,6 +121,8 @@ library(ggplot2)
 library(wordcloud)
 library(stringr)
 require(stringr)
+library(rvest)
+
 #getwd()
 #setwd('D:/extraz/CBA ISB/Term 1/Residency 2 - Nov/Text Analytics/Assignment_TABA')
 
@@ -120,17 +130,32 @@ shinyServer(function(input, output) {
   
   LanguageInput <- reactive({
     switch(input$language,
-           "English" = english,
+           "English" = English,
            "Hindi" = Hindi,
            "Spanish" = Spanish)
   })
   
+  
+  
   Dataset <- reactive({
-    
     if (is.null(input$file1)) {
       return(NULL) } 
-    else{
-      Data <- readLines(input$file1$datapath)
+    else if (input$language == "English") {
+      Data <- readLines(input$file1$datapath,encoding = 'UTF-8')
+      Data  =  str_replace_all(Data, "<.*?>", "") # get rid of html junk 
+      Data = Data[Data!= ""]
+      str(Data)
+      return(Data)
+    }
+    else if (input$language == "Hindi") {
+      Data <- readLines(input$file1$datapath,encoding = 'UTF-8')
+      Data  =  str_replace_all(Data, "<.*?>", "") # get rid of html junk 
+      Data = Data[Data!= ""]
+      #str(Data)
+      return(Data)
+    }
+    else {
+      Data <- readLines(input$file1$datapath,encoding = 'UTF-8')
       Data  =  str_replace_all(Data, "<.*?>", "") # get rid of html junk 
       Data = Data[Data!= ""]
       str(Data)
@@ -138,22 +163,29 @@ shinyServer(function(input, output) {
     }
   })
   
-  english_model = reactive({
+  
+  model = reactive({
     if (is.null(input$file2)) {return(NULL)}
     else {
-      english_model  = udpipe_load_model(input$file2$datapath)
+      model  = udpipe_load_model(input$file2$datapath)
     }
-    # file_model only needed
-    return(english_model)
+    
+    return(model)
   })
   
-  #https://github.com/Yaasheen/TABA/blob/master/english-ud-2.0-170801.udpipe?raw=true
-  #https://github.com/Yaasheen/TABA/blob/master/english-ud-2.0-170801.udpipe
   
-  annot.obj = reactive({
-    x <- udpipe_annotate(english_model(),x = Dataset())
-    x <- as.data.frame(x)
-    return(x)
+  annot.obj <- reactive({
+    if (input$language == "Hindi") {
+      x <- udpipe_annotate(model(),x = Dataset())
+      x <- as.data.frame(x)
+      windowsFonts(devanew=windowsFont("Devanagari new normal"))
+      return(x)
+    } 
+    else {
+      x <- udpipe_annotate(model(),x = Dataset())
+      x <- as.data.frame(x)
+      return(x)
+    }
   })
   
   output$downloadData <- downloadHandler(
@@ -177,7 +209,7 @@ shinyServer(function(input, output) {
   output$wcplot1 = renderPlot({
     if(is.null(input$file1)){return(NULL)}
     else{
-      all_nouns = annot.obj() %>% subset(., xpos %in% "NN") 
+      all_nouns = annot.obj() %>% subset(., upos %in% "NOUN") 
       top_nouns = txt_freq(all_nouns$lemma)  # txt_freq() calculates frequency of Nouns
       
       wordcloud(top_nouns$key,top_nouns$freq, min.freq = 3,colors = 1:10 )
@@ -187,7 +219,7 @@ shinyServer(function(input, output) {
   output$wcplot2 = renderPlot({
     if(is.null(input$file1)){return(NULL)}
     else{
-      all_verbs = annot.obj() %>% subset(., xpos %in% "VB") 
+      all_verbs = annot.obj() %>% subset(., upos %in% "VERB") 
       top_verbs = txt_freq(all_verbs$lemma)
       
       wordcloud(top_verbs$key,top_verbs$freq, min.freq = 3,colors = 1:10 )
@@ -198,7 +230,7 @@ shinyServer(function(input, output) {
     if(is.null(input$file1)){return(NULL)}
     else{
       cooc <- cooccurrence(   	
-        x = subset(annot.obj(), xpos %in% input$xpos), 
+        x = subset(annot.obj(), upos %in% input$upos), 
         term = "lemma", 
         group = c("doc_id", "paragraph_id", "sentence_id"))
       
@@ -213,7 +245,7 @@ shinyServer(function(input, output) {
         theme_graph(base_family = "Arial Narrow") +  
         theme(legend.position = "none") +
         
-        labs(title = "Cooccurrences Graph", subtitle = "Select the check boxes in the left pane")
+        labs(title = "Co-occurrences Graph", subtitle = "Select the check boxes in the left pane")
     }
   })
 })
