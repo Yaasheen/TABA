@@ -4,7 +4,6 @@
 # ID: 11810091  Bhargav BR                                                #
 ###########################################################################
 
-
 #---------------------------------------------------------------------#
 #        Shiny App for UDPipe NLP workflow                            #
 #---------------------------------------------------------------------#
@@ -72,7 +71,18 @@ ui <- shinyUI(
                                'to see the word Clouds for Nouns and Verbs from the Annotated Data'),
                              p('Click on', 
                                span(strong("Co-occurence for XPOS")),
-                               'to see the Co-occurences for XPOS selected on the Check Boxes on the side pane.')),
+                               'to see the Co-occurences for XPOS selected on the Check Boxes on the side pane.'),
+                             br(),
+                             
+                             h4('Logical Flow'),
+                             p('1. App takes First input as file in txt format based on the language selected in LOV.',br(),
+                               '2. Second Input file is the udpipe model file based on the language selected in LOV.',br(),
+                               '3. Based on the Language selected  if loops in server.R file reads input file1 and stores it in Dataset.',br(),
+                               '4. Input file 2 - is stored as model . There is a check to ensure it is not null.',br(),
+                               '5. annot.obj stores the object by applying the model to the input file collected. For Hindi Language, Devanagiri Font is loaded.',br(),
+                               '6. output$downloadData stores the output for downloading data in csv format of the annotated file.output$datatableOutput object stores the output in table format for display.',br(),
+                               '7. output$wcplot1 and output$wcplot2 objects store the word cloud for nouns and verbs. Code takes annotated object and filters on upos selected on the side panel.',br(),
+                               '8. output$coocplot object uses renderplot and stores the output of co-occurence plot. The plot is created by filtering on the upos selected in side panel by user.')),
                     
                     tabPanel("Table of Annotated documents", 
                              dataTableOutput('datatableOutput'),
@@ -94,6 +104,9 @@ ui <- shinyUI(
     ) # end of sidebarLayout
   )  # end if fluidPage
 ) # end of UI
+
+
+
 
 
 windowsFonts(devanew=windowsFont("Devanagari new normal"))
